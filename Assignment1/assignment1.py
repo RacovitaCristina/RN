@@ -6,14 +6,17 @@ import math
 
 #extrag coeficientul unui termen
 def get_coefficient(term):
-    coefficient = term[:-1]   #toate caracterele in afara de ultimul (care este variabila)
+    coefficient = term[:-1] #toate caracterele in afara de ultimul (care este variabila)
 
-    #daca coeficientul este gol, inseamna ca este 1
+    # daca nu avem coeficient explicit, acesta este 1
     if coefficient == "":
         return 1.0
 
-    return float(coefficient)
+    # daca avem doar minus, coeficientul este -1
+    if coefficient == "-":
+        return -1.0
 
+    return float(coefficient)
 
 #citeste sistemul de ecuatii dintr-un fisier si returneaza matricea A si vectorul B
 def load_system(path: pathlib.Path) -> tuple[list[list[float]], list[float]]:
@@ -26,7 +29,7 @@ def load_system(path: pathlib.Path) -> tuple[list[list[float]], list[float]]:
     for line in lines:
         tokens = line.split()
 
-        coefficients = []
+        coefficients = [0.0, 0.0, 0.0]  # initializam coeficientii cu 0
         sign = 1
 
         for token in tokens:
@@ -41,7 +44,15 @@ def load_system(path: pathlib.Path) -> tuple[list[list[float]], list[float]]:
 
             else:
                 coefficient = get_coefficient(token)
-                coefficients.append(sign * coefficient)
+
+                variable = token[-1]
+
+                if variable == "x":
+                    coefficients[0] = sign * coefficient
+                elif variable == "y":
+                    coefficients[1] = sign * coefficient
+                elif variable == "z":
+                    coefficients[2] = sign * coefficient
         #add coef ecuatiei ca o linie in matricea A   
         A.append(coefficients)
         #ultimul element al ecuatiei este termenul liber, care se adauga in vectorul B
@@ -148,8 +159,9 @@ print(f"{multiply(A, B)=}")
 def solve_cramer(matrix: list[list[float]], vector: list[float]) -> list[float]:
     det_A = determinant(matrix)
 
-    if det_A == 0:
-     raise ValueError("Matricea are determinantul 0, deci nu se poate aplica regula lui Cramer")
+    #daca e 0 sau foarte aproape de 0, nu se poate aplica regula lui Cramer
+    if math.isclose(det_A, 0.0, abs_tol=1e-12): 
+     raise ValueError("Determinantul este zero sau foarte apropiat de zero")
 
 
     solution = []
@@ -225,8 +237,9 @@ print(f"{adjoint(A)=}")
 def solve(matrix: list[list[float]], vector: list[float]) -> list[float]:
     det_A = determinant(matrix)
     
-    if det_A == 0:
-     raise ValueError("Matricea nu este inversabila")
+    # verificam daca determinantul este zero sau foarte apropiat de zero
+    if math.isclose(det_A, 0.0, abs_tol=1e-12):
+     raise ValueError("Determinantul este zero sau foarte apropiat de zero. Nu se poate calcula inversa matricei.")
 
     adj_A = adjoint(matrix)
 
